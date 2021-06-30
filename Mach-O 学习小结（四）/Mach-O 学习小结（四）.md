@@ -8,8 +8,8 @@
 
 [第一章](https://www.jianshu.com/p/fa5666308724) 描述了 Mach-O 文件的基本结构；  
 [第二章](https://www.jianshu.com/p/92b4f611170a) 概述了符号，分析了符号表（symbol table）。  
-[第三章](https://www.jianshu.com/p/9e4ccd3cb765) 探寻动态链接。
-[第四章]() 分析fishhook
+[第三章](https://www.jianshu.com/p/9e4ccd3cb765) 探寻动态链接。  
+[第四章]() 分析fishhook。   
 
 ### Fishhook简介
 
