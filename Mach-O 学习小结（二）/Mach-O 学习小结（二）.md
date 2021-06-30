@@ -1,9 +1,13 @@
 # Mach-O 学习小结（二）
 
 最近学习了一下 Mach-O ,这里做个笔记记录，整理思路，加深理解。  
-原文出处 [Valar Morghulis 的博客](https://zhangbuhuai.com/post/macho-static-link.html)  
+附上下文所用[demo](https://github.com/whlpkk/Mach)
 
 ## 概述
+
+[第一章](https://www.jianshu.com/p/fa5666308724) 描述了 Mach-O 文件的基本结构；  
+[第二章](https://www.jianshu.com/p/92b4f611170a) 概述了符号，分析了符号表（symbol table）。  
+[第三章](https://www.jianshu.com/p/9e4ccd3cb765) 探寻动态链接。
 
 本文的核心主题是静态链接，这一部分会对静态链接的内容做一个概述；在介绍链接之前，有必要先理清两个基本概念：符号、模块。
 
@@ -11,7 +15,7 @@
 
 先说符号（symbol）。计算机世界里的符号概念起源于汇编，在汇编之前，远古大神的代码都是机器代码，机器代码充满了各种各样的数值，这些数值描述着指令、操作数、地址值；可以想到，全是数值的机器代码可读性非常糟糕；对于地址值而言，当程序变更时，地址值就得重新计算，这种操作实在过于黑暗，于是先驱者发明了汇编语言，使用符号来帮助记忆，如下：
 
-```
+``` 
 jmp foo
 ...
 foo:
@@ -87,7 +91,7 @@ $ gcc -c a.c b.c
 
 使用 MachOView 工具查看 a.o 的 \_\_TEXT \_\_text 的反汇编内容:
 
-![mach-a](./mach-a.png)
+![mach-a.png](mach-a.png)
 
 图中使用红框标记了 a.o 中的两处符号引用，分别对应 movq 操作和 callq 操作：
 
@@ -106,7 +110,7 @@ Relocation Symbol Table 正是解决这个问题的。
 
 某个 section 如果内含需要被重定位的字节，就会有一个 relocation table 与此对应：
 
-![relocation](./relocation.png)
+![relocation.png](relocation.png)
 
 在[第一章](https://www.jianshu.com/p/fa5666308724)里介绍过 section 的结构（相关结构体定义于[mach-o/loader.h](https://opensource.apple.com/source/xnu/xnu-4903.221.2/EXTERNAL_HEADERS/mach-o/loader.h)中的 `section_64`），其中有两个字段描述了其对应的relocation table：
 
@@ -131,7 +135,7 @@ struct relocation_info {
 对这几个字段稍作说明，也可查看[苹果官方定义](https://developer.apple.com/documentation/kernel/relocation_info?language=occ)：
 
 * `r_address`表示相对于 section 的偏移量
-* `r_length`表示需要被 relocation 的字节范围，0=1 byte, 1=2 bytes, 2=4 bytes, 3=8 bytes。
+* `r_length`表示需要被 relocation 的字节范围， 0=1 byte,  1=2 bytes,  2=4 bytes,  3=8 bytes
 * `r_pcrel`表示地址值是否是 PC 相对地址值
 * `r_extern`标记该符号是否是外部符号
 * `r_symbolnum`，index 值，对于外部符号，它描述了符号在 symbol table 中的索引（从0开始）；如果是内部符号，它描述了符号所在的 section 的索引（按照LC\_SEGMENT load commands加载顺序排序，范围是1~255）。
@@ -139,13 +143,15 @@ struct relocation_info {
 
 这里还是以刚才的 a.o 为例：
 
-![relocation_info](./relocation_info.png)
+![](relocation_info.png)
+![](relocation_info_2.png)
+
 
 ```
-这里解析第一个元素，可以看到 Data 值为 22 00 00 00 02 00 00 2D (小端模式)，
-转换为阅读习惯(大端模式)为 2D 00 00 02 00 00 00 22
+这里解析第一个元素，从第二幅图可以看到 Data 值分别为 22 00 00 00 和 02 00 00 2D (小端模式)，小端模式即低地址为在前，高地址为在后
+转换为阅读习惯(大端模式)为 00 00 00 22 和 2D 00 00 02 ，即图1中的 Data 列数据，这里是MachOView自动做了处理。
  
-00 00 00 22   低4字节，对应r_address，表示在对应section偏移为 0x22
+00 00 00 22   低4字节，对应r_address，表示在对应section偏移为 0x22，也就是说在__Text,__text section中偏移为0x22的位置。 
 2D 00 00 02   高4字节，先看低位的24位(r_symbolnum:24)，值为 00 00 02，即 2
 2D 转为 2进制  0010 1101  
 第25位(r_pcrel:1)，值为 1，表示该地址是相对于PC的相对地址 
@@ -154,14 +160,15 @@ struct relocation_info {
 29~32位(r_type:4)，值为 0b0010。
 
 这里因为r_extern 值为1，表示是外部符号，所以这里的r_symbolnum表示在symbol表中的索引（从0开始）。
-根据后面的Symbol Table可以找到索引为1的符号，也就是_swap(详情见下文)。
+根据后面的Symbol Table可以找到索引为2的符号，也就是_swap(查找过程见下文)。
+综上所述，也就是会在__Text,__text section中偏移为0x22的位置起始，替换4字节。替换为外部符号_swap
 ```
 
 ### Symbol Table
 
 从上文的`r_symbolnum`可以看出，`relocation_info`并未完整描述符号信息，它只是告诉链接器哪些指令需要调整地址。符号的具体信息（包括符号名等）在 symbol table 中：
 
-![symbolTable](./symbolTable.png)
+![symbolTable.png](symbolTable.png)
 
 链接器是通过 LC\_SYMTAB 这个 load command 找到 symbol table 的，关于 load command，在[第一章](https://www.jianshu.com/p/fa5666308724)里有过介绍，此处不再赘述；LC\_SYMTAB 对应的 command 结构体如下：
 
@@ -209,11 +216,11 @@ struct nlist_64 {
 
 这里举个例子解释一下`n_un`怎么找到符号名，以上面符号表的截图中，`_shared`符号为例：
 
-![symbol_nu](./symbol_nu.png)
+![symbol_nu.png](symbol_nu.png)
 
 可以看到`n_un`的值为 0xD，即13。去 String Table 表中去查询：
 
-![string_table](./string_table.png)
+![string_table.png](string_table.png)
 
 可以看到，查询到的结果为：\_（0x57）s（0x73）h（0x68）a（0x61）r（0x72）e（0x65）d（0x64）。从ASCII码查表即可得到结果，即我们这里的符号名`_shared`。
 
@@ -232,11 +239,11 @@ ld a.o b.o -macosx_version_min 10.14 -o ab.out -lSystem
 
 在[第一章](https://www.jianshu.com/p/fa5666308724)里介绍过 load Commond 的结构，我们可以知道 \_\_Text segment 的虚拟基地址为 `4294967296，即 0x 100000000`。相对于文件的偏移量为 0 。
 
-![segment_text](./segment_text.png)
+![segment_text.png](segment_text.png)
 
 代码段 \_\_TEXT \_\_text 的反汇编内容，如下：
 
-![mach-ab](./mach-ab.png)
+![mach-ab.png](mach-ab.png)
 
 图中红线部分分别是符号`_shared`和`_swap`对应的地址，链接前，a.o 中此两处的地址值均为0；在 ab.out 中，链接器根据 a.o 的 relocation table 的信息，对此两处地址进行了调整，将它们修改为有效地址。
 
@@ -252,7 +259,7 @@ ld a.o b.o -macosx_version_min 10.14 -o ab.out -lSystem
 
 指令相对偏移是 `0x A1 00 00 00（小端），即 0x000000A1`，相加计算得到的`_shared`符号的虚拟地址值等于 0x100001000（如图中所示）。
 
-![segment_data](./segment_data.png)
+![segment_data.png](segment_data.png)
 
 根据 Load Commonds 可以看到，0x100001000 落在 \_\_DATA segment 中。同上面的计算方法，计算出在文件中的偏移量为 0x00001000。
 
@@ -266,7 +273,7 @@ ld a.o b.o -macosx_version_min 10.14 -o ab.out -lSystem
 
 根据文件偏移地址 0x1000 对应的是 ab.out 中的 \_\_DATA \_\_data :
 
-![mach-data](./mach-data.png)
+![mach-data.png](mach-data.png)
 
 该地址所存储的值 0x0000002A 恰好等于 42（b.c中赋值的42）。
 
@@ -290,7 +297,7 @@ Relocation table 没有了，symbol table 呢？令人震惊的是，ab.out 的 
 * `nreloc`: relocation table 的 entry 数量
 
 
-2、 relocation table可以看作是一个 relocation entry 的数组，每个 relocation entry 占 8 个字节：
+2、 relocation table可以看作是一个 relocation entry 的数组，每个 relocation entry 占 8 个字节。某个 section 如果内含需要被重定位的字节，就会有一个 relocation table 与此对应：
 
 对应结构体是[relocation\_info](https://opensource.apple.com/source/xnu/xnu-4903.221.2/EXTERNAL_HEADERS/mach-o/reloc.h):
 

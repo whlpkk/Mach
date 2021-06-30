@@ -1,11 +1,16 @@
 # Mach-O 学习小结（一）
 
-最近学习了一下 Mach-O ,这里做个笔记记录一下。
+最近学习了一下 Mach-O ,这里做个笔记记录，整理思路，加深理解。
+
+[第一章](https://www.jianshu.com/p/fa5666308724) 描述了 Mach-O 文件的基本结构；  
+[第二章](https://www.jianshu.com/p/92b4f611170a) 概述了符号，分析了符号表（symbol table）。  
+[第三章](https://www.jianshu.com/p/9e4ccd3cb765) 探寻动态链接。
 
 ## 结构分析
 
 关于 Mach-O 的文件格式，在网上常常看到如下这张图，出自官方文档《OS X ABI Mach-O File Format Reference》：
-![image](./mach-o-structure-official.png)
+
+![mach-o-structure.png](mach-o-structure-official.png)
 
 通过这张图，可以看到，从布局上，Mach-O 文件分为三个部分：Header、Load Commands、Data。但这张图过于简略，信息不完善，可能会让人困惑。先简单分析 Header 和 Load Commands 的结构吧！
 
@@ -15,7 +20,7 @@
 
 [mach-o/loader.h](https://opensource.apple.com/source/xnu/xnu-4903.221.2/EXTERNAL_HEADERS/mach-o/loader.h) 的`struct mach_header` 定义了 Header 的结构：
 
-``` objc
+``` c
 struct mach_header_64 {
     uint32_t magic;           /* mach magic number identifier */
     cpu_type_t cputype;       /* cpu specifier */
@@ -32,11 +37,11 @@ struct mach_header_64 {
 
 每个字段的意思，如下：
 
-![image](./mach-header.png)
+![mach-header.png](mach-header.png)
 
 filetype，描述了二进制文件的类型，包括了十来个有效值，常打交道的包括：
 
-``` objc
+``` c
 #define MH_OBJECT      0x1    // 中间目标文件，例如.o文件
 #define MH_EXECUTE     0x2    // 可执行文件
 #define MH_DYLIB       0x6    // 动态链接库
@@ -51,7 +56,7 @@ Load Commands 可以被看作是一个 command 列表，紧贴着 Header，所�
 
 每个 command 都有独立的结构，但所有 command 结构的前两个字段是固定的：
 
-``` objc
+``` c
 struct load_command {
     uint32_t cmd;      /* type of load command */
     uint32_t cmdsize;  /* total size of command in bytes */
@@ -62,7 +67,7 @@ struct load_command {
 
 这里只讲其中的一个 load command ，LC\_SEGMENT\_64，因为它和 segment、section 有关；命令格式如下：
 
-``` objc
+``` c
 struct segment_command_64 { /* for 64-bit architectures */
     uint32_t   cmd;         /* LC_SEGMENT_64 */
     uint32_t   cmdsize;     /* includes sizeof section_64 structs */
@@ -89,7 +94,7 @@ struct segment_command_64 { /* for 64-bit architectures */
 
 对于 LC\_SEGMENT\_64 而言，如果其`nsects`字段大于 0，其命令后面还会紧接着挂载`nsects`个描述 section 的信息，这些信息是结构体`section_64`的列表，`section_64`结构体定义如下：
 
-``` objc
+``` c
 struct section_64 { /* for 64-bit architectures */
     char      sectname[16];    /* name of this section */
     char      segname[16];     /* segment this section goes in */
@@ -116,7 +121,7 @@ struct section_64 { /* for 64-bit architectures */
 72（segment_command_64本身大小） + 2 * 80（section_64的大小） = 232 bytes
 ```
 
-![image](./QQ20191104-181629@2x.png)
+![](mach-data.png)
 
 这里应该明白 segment 和 section ：Mach-O 本没有 segment，有了 LC\_SEGMENT\_64，于是有了 segment。
 
@@ -140,7 +145,7 @@ int main(void) {
 
 执行gcc main.c，得到可执行文件 a.out，使用 MachOView 工具查看，得到如下结构：
 
-![image](./simple-mach-o-view-demo.png)
+![simple-mach-o-view-demo.png](simple-mach-o-view-demo.png)
 
 注意左右标红的部分，可以得到的信息：
 
@@ -154,13 +159,13 @@ int main(void) {
 
 一个典型的 Mach-O 结构图的更清晰描述应该是这个样子：
 
-![image](./mach-o-structure-mine.png)
+![mach-o-structure-mine.png](mach-o-structure-mine.png)
 
 ## 总结
 
 这篇文章主要说明了 Mach-O 文件的结构，以及三种结构体`mach_header_64 `、`segment_command_64 `、`section_64 `的结构及其意义: 
 
-``` objc
+``` c
 //解释 Header
 struct mach_header_64 { 
     uint32_t magic;           /* mach magic number identifier */
