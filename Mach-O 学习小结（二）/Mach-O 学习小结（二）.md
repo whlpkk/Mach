@@ -7,7 +7,11 @@
 
 [第一章](https://www.jianshu.com/p/fa5666308724) 描述了 Mach-O 文件的基本结构；  
 [第二章](https://www.jianshu.com/p/92b4f611170a) 概述了符号，分析了符号表（symbol table）。  
-[第三章](https://www.jianshu.com/p/9e4ccd3cb765) 探寻动态链接。
+[第三章](https://www.jianshu.com/p/9e4ccd3cb765) 探寻动态链接。  
+[第四章](https://www.jianshu.com/p/c9445935b055) 分析fishhook。   
+[第五章](https://www.jianshu.com/p/bad714ea8df7) 分析BeeHive。
+
+
 
 本文的核心主题是静态链接，这一部分会对静态链接的内容做一个概述；在介绍链接之前，有必要先理清两个基本概念：符号、模块。
 
