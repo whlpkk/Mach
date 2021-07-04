@@ -134,6 +134,10 @@ struct section_64 { /* for 64-bit architectures */
 
 这里应该明白 segment 和 section ：Mach-O 本没有 segment，有了 LC\_SEGMENT\_64，于是有了 segment。
 
+segment 是一段连续的内存地址，一般来说拥有相同的读、写、执行权限，segment都是页对齐的。section 不是页对齐的。
+
+更多Load Commond作用及相关定义，可以参考 [聊聊 Mach-O 文件格式](https://geneblue.github.io/2021/01/04/osx/sec--MachO-file-format/) 。
+
 ### Data的结构
 
 和 Header、Load Commands 不同，Mach-O 对 Data 区域没有任何公共的结构上的定义。它里面盛装的字节本来没有意义，有了 LC\_SEGMENT\_64 以及其他的 load commands，一切才开始有了意义。
