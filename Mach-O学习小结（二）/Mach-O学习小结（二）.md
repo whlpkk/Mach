@@ -9,7 +9,8 @@
 [第二章](https://www.jianshu.com/p/92b4f611170a) 概述了符号，分析了符号表（symbol table）。  
 [第三章](https://www.jianshu.com/p/9e4ccd3cb765) 探寻动态链接。  
 [第四章](https://www.jianshu.com/p/c9445935b055) 分析fishhook。   
-[第五章](https://www.jianshu.com/p/bad714ea8df7) 分析BeeHive。
+[第五章](https://www.jianshu.com/p/bad714ea8df7) 分析BeeHive。    
+[第六章](https://www.jianshu.com/p/a174f17a9d82) App启动时间。
 
 
 
