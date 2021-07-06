@@ -227,7 +227,7 @@ struct nlist_64 {
 
 ![string_table.png](string_table.png)
 
-可以看到，查询到的结果为：\_（0x57）s（0x73）h（0x68）a（0x61）r（0x72）e（0x65）d（0x64）。从ASCII码查表即可得到结果，即我们这里的符号名`_shared`。
+可以看到，查询到的结果为：\_（0x5F）s（0x73）h（0x68）a（0x61）r（0x72）e（0x65）d（0x64）。从ASCII码查表即可得到结果，即我们这里的符号名`_shared`。
 
 有了 relocation table 和 symbol table，链接器就与足够的信息进行链接处理了。
 
@@ -262,7 +262,7 @@ ld a.o b.o -macosx_version_min 10.14 -o ab.out -lSystem
 可以算得 虚拟地址为 0x100000F5F。
 ```
 
-指令相对偏移是 `0x A1 00 00 00（小端），即 0x000000A1`，相加计算得到的`_shared`符号的虚拟地址值等于 0x100001000（如图中所示）。
+指令相对偏移是 `0x A1 00 00 00（小端），即 0x000000A1`，相加计算得到的`_shared`符号的虚拟地址值等于 0x100001000（如上图所示）。
 
 ![segment_data.png](segment_data.png)
 

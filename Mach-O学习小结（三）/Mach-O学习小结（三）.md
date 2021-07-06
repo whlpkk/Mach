@@ -176,7 +176,9 @@ struct dylib {
 
 ### Dynamic Symbol Table
 
-每一个可执行的镜像文件，都有一个 symbol table，由`LC_SYMTAB`命令定义，包含了镜像所用到的所有符号信息。那么 indirect symbol table 是一个什么东西呢？本质上，indirect symbol table 是 index 数组，即每个条目的内容是一个 index 值，该 index 值（从 0 开始）指向到 symbol table 中的条目。Indirect symbol table 由`LC_DYSYMTAB`定义（Load Command），后者的结构是一个`dysymtab_command`结构体，详见[dysymtab_command](https://opensource.apple.com/source/xnu/xnu-4903.221.2/EXTERNAL_HEADERS/mach-o/loader.h.auto.html)，该结构体内容非常丰富，目前我们只需要关注`indirectsymoff`和`nindirectsyms`这两个字段：
+每一个可执行的镜像文件，都有一个 symbol table，由`LC_SYMTAB`命令定义，包含了镜像所用到的所有符号信息。
+
+那么 indirect symbol table 是一个什么东西呢？本质上，indirect symbol table 是 index 数组，即每个条目的内容是一个 index 值，该 index 值（从 0 开始）指向到 symbol table 中的条目。Indirect symbol table 由`LC_DYSYMTAB`定义（Load Command），后者的结构是一个`dysymtab_command`结构体，详见[dysymtab_command](https://opensource.apple.com/source/xnu/xnu-4903.221.2/EXTERNAL_HEADERS/mach-o/loader.h.auto.html)，该结构体内容非常丰富，目前我们只需要关注`indirectsymoff`和`nindirectsyms`这两个字段：
 
 ``` c
 struct dysymtab_command {
@@ -217,7 +219,7 @@ _say 的目标虚拟地址 = 0x100000F85 + 0x00000009 = 0x100000F8E
 
 ![got.png](got.png)
 
-![stubs.png](https://upload-images.jianshu.io/upload_images/153594-acc906cd8dd9d87a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![stubs.png](stubs.png)
 
 Mach-O 的代码段对 dylib 外部符号的引用地址，要么指向到`__got`，要么指向到`__stubs`。什么时候指向到前者，什么时候指向到后者呢？
 
@@ -308,7 +310,7 @@ Contents of (__TEXT,__stubs) section
 
 ![stub_helper.png](stub_helper.png)
 
-`__stubs`第一个 stub 的 jump 目标地址在第 6 行；这几条汇编代码比较简单，可以看出，代码最终会跳到第 3 行；之后该何处何从？
+`__stubs`第一个 stub 的 jump 目标地址在第 6 行；这几条汇编代码比较简单，可以看出，代码最终会跳到第 3 行；之后该何去何从？
 
 不难计算，第 3 行跳转目标地址是 0x100001010 (0x100000FA3 + 0x6D)存储的内容，0x100001010 在哪里呢？0x100001010 坐落于 section(\_\_DATA \_\_got)，通过上图可知指向了`dyld_stub_binder`。
 
@@ -344,5 +346,9 @@ Lazy binding symbol 的绑定工作正是由 `dyld_stub_binder` 触发，通过�
 
 之后再次访问`_say`时，stub 里的 jmp 指令直接跳转符号的真实地址，因为该地址已经被写到`__la_symbol_ptr`条目中。
 
-这里只是简单的讲解了部分，推荐文章 [iOS Lazy Bind 你真的弄懂了吗？](http://www.zyiz.net/tech/detail-99942.html)
+![](zongjie.png)
+
+
+
+这里只是简单的讲解了部分，更具体的学习，推荐文章 [iOS Lazy Bind 你真的弄懂了吗？](http://www.zyiz.net/tech/detail-99942.html)
 

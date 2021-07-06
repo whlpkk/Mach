@@ -46,20 +46,29 @@ class BeeHive; char * k##servicename##_service BeeHiveDATA(BeehiveServices) = "{
 
 这是BeeHive中最重要的几个宏定义，对外主要使用`BeeHiveMod(name)`和`BeeHiveService(servicename,impl)`。这里以`BeeHiveService(servicename,impl)`为例来讲。
 
+```
+#： 在宏定义中，将其后的变量，转化为字符串。
+## ： 在宏定义中，将其前后的两个变量拼接在一起。
+```
+
 将宏定义展开
 
 ```c
 // eg: servicenameProtocol为协议，servicenameImp为实现协议的类
 @BeeHiveService(servicenameProtocol,servicenameImp) 
 // 可以展开为如下：
-@class BeeHive; char * kservicenameProtocol_service BeeHiveDATA(BeehiveServices) = "{ \""servicenameProtocol"\" : \""servicenameImp"\"}";
+@class BeeHive; char * kservicenameProtocol_service BeeHiveDATA(BeehiveServices) = "{ \"""servicenameProtocol""\" : \"""servicenameImp""\"}";
 // 再展开BeeHiveDATA(BeehiveServices)：
-@class BeeHive; char * kservicenameProtocol_service __attribute((used, section("__DATA,"BeehiveServices" "))) = "{ \""servicenameProtocol"\" : \""servicenameImp"\"}";
+@class BeeHive; char * kservicenameProtocol_service __attribute((used, section("__DATA,""BeehiveServices"" "))) = "{ \"""servicenameProtocol""\" : \"""servicenameImp""\"}";
 // 在C语音中 "abc"也可以写成 "a""b"c",即相连的字符串可以合并，这里合并字符串
 @class BeeHive; char * kservicenameProtocol_service __attribute((used, section("__DATA, BeehiveServices "))) = "{ \"servicenameProtocol\" : \"servicenameImp\"}";
 ```
 
-这里可以看到，其实这个宏就是声明了一个字符串变量。`class BeeHive;`的用处，是可以在使用宏的时候，前面要拼`@`。这里重要的是`__attribute((used, section("__DATA, BeehiveServices ")))`，\_\_attribute第一个参数used。被used修饰以后，意味着即使符号没有被引用，在Release下也不会被优化。如果不加这个修饰，那么Release环境链接器会去掉。section("\_\_DATA, BeehiveServices ")标记这个被放在哪个section中，这里即为`__DATA segment`下的`BeehiveServices section`。
+这里可以看到，其实这个宏就是声明了一个字符串变量。`class BeeHive;`的用处，是可以在使用宏的时候，前面要拼`@`。
+
+这里重要的是`__attribute((used, section("__DATA, BeehiveServices ")))`，\_\_attribute第一个参数used。被used修饰以后，意味着即使符号没有被引用，在Release下也不会被优化。如果不加这个修饰，那么Release环境链接器会去掉。
+
+section("\_\_DATA, BeehiveServices ")标记这个被放在哪个section中，这里即为`__DATA segment`下的`BeehiveServices section`。
 
 也就是说，这个宏的作用，声明了一个不会被优化掉的字符串变量，变量的内容为`"{ \"servicenameProtocol\" : \"servicenameImp\"}"`，该字符串存储在Mach-O文件`__DATA BeehiveServices section`中。
 

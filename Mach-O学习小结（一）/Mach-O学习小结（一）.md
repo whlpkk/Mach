@@ -74,7 +74,7 @@ struct load_command {
 
 第一个字段指定了类型，第二个字段指定了大小，确保它能被正确解析。
 
-这里只讲其中的一个 load command ，LC\_SEGMENT\_64，因为它和 segment、section 有关；命令格式如下：
+这里只讲其中的一个 load command ，LC\_SEGMENT\_64，因为它和 segment（段）、section（节） 有关；命令格式如下：
 
 ``` c
 struct segment_command_64 { /* for 64-bit architectures */
@@ -163,7 +163,7 @@ int main(void) {
 注意左右标红的部分，可以得到的信息：
 
 * 一共包括三个 segment：\_\_TEXT、\_\_DATA、\_\_LINKEDIT
-* segment 的内容范围并非一定在 Data 区内（譬如 \_\_TEXT segment）
+* segment 的内容范围并非一定在 Data 区(左侧红线的划分)内（譬如 \_\_TEXT segment）
 * 并非每一个 segment 都由 section 组成（譬如 \_\_LINKEDIT segment）
 
 为啥 \_\_TEXT 的地址范围从 0 开始而非从 \_text 这个 section 开始呢？《OS X ABI Mach-O File Format Reference》是这么说的：

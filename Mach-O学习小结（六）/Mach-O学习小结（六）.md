@@ -19,15 +19,15 @@
 
 #### APP的启动流程
 
-1. iOS系统**首先会加载解析该APP的Info.plist文件**，因为Info.plist文件中包含了支持APP加载运行所需要的众多Key，value配置信息，例如APP的运行条件(Required device capabilities)，是否全屏，APP启动图信息等。
+1. iOS系统首先会加载解析该APP的Info.plist文件，因为Info.plist文件中包含了支持APP加载运行所需要的众多Key，value配置信息，例如APP的运行条件(Required device capabilities)，是否全屏，APP启动图信息等。
 
-2. **创建沙盒**(iOS8后，每次启动APP都会生成一个新的沙盒路径)
+2. 创建沙盒(iOS8后，每次启动APP都会生成一个新的沙盒路径)
 
-3. 根据Info.plist的配置**检查相应权限状态**
+3. 根据Info.plist的配置检查相应权限状态
 
-4. **加载Mach-O文件**读取dyld路径并**运行dyld动态连接器**(内核加载了主程序，dyld只会负责动态库的加载)
+4. 加载Mach-O文件读取dyld路径并运行dyld动态连接器(内核加载了主程序，dyld只会负责动态库的加载)
 	- 4.1 首先dyld会寻找合适的CPU运行环境
-	- 4.2 然后加载程序运行所需的依赖库和我们自己写的.h.m文件编译成的.o可执行文件，并对这些库进行链接。
+	- 4.2 然后加载程序运行所需的依赖库，并对这些库进行链接。
 	- 4.3 加载所有方法(runtime就是在这个时候被初始化并完成OC的内存布局)
 	- 4.4 加载C函数
 	- 4.5 加载category的扩展(此时runtime会对所有类结构进行初始化)
@@ -63,7 +63,7 @@ Load dylibs -> Rebase -> Bind -> ObjC -> Initializers
 
 Slide = actual_address - preferred_address
 
-然后就是重复不断地对 `__DATA` 段中需要 rebase 的指针加上这个偏移量。这就又涉及到 page fault 和 COW（`opy-on-write`）。这可能会产生 I/O 瓶颈，但因为 rebase 的顺序是按地址排列的，所以从内核的角度来看这是个有次序的任务，它会预先读入数据，减少 I/O 消耗。
+然后就是重复不断地对 `__DATA` 段中需要 rebase 的指针加上这个偏移量。这就又涉及到 page fault 和 COW（`copy-on-write`）。这可能会产生 I/O 瓶颈，但因为 rebase 的顺序是按地址排列的，所以从内核的角度来看这是个有次序的任务，它会预先读入数据，减少 I/O 消耗。
 
 #### Binding
 
