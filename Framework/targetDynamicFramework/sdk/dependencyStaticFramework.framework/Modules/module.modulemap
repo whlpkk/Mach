@@ -1,0 +1,6 @@
+framework module dependencyStaticFramework {
+  umbrella header "dependencyStaticFramework.h"
+
+  export *
+  module * { export * }
+}
