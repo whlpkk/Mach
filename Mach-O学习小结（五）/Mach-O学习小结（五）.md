@@ -23,7 +23,7 @@
 
 ## BeeHive源码分析
 
-### BHAnnotation
+### BHAnnotation宏定义
 
 ```c
 //BHAnnotation.h
@@ -72,7 +72,21 @@ section("\_\_DATA, BeehiveServices ")标记这个被放在哪个section中，这
 
 也就是说，这个宏的作用，声明了一个不会被优化掉的字符串变量，变量的内容为`"{ \"servicenameProtocol\" : \"servicenameImp\"}"`，该字符串存储在Mach-O文件`__DATA BeehiveServices section`中。
 
+### Mach-O存储形式
 
+字符串会被存储在`__TEXT segment, __cstring section`中，`__DATA BeehiveServices section`中存储的是指针，指向`__cstring`中的字符串。eg:
+
+`@BeeHiveService(HomeServiceProtocol,BHViewController)`
+
+![](1.png)
+
+可以看到指针指向0x010001D46D，换算成文件偏移地址，即：0x0001D46D，可以看到，正好落到`__cstring`中
+
+![](2.png)
+
+
+
+### BHAnnotation实现
 
 ```c
 static void dyld_callback(const struct mach_header *mhp, intptr_t vmaddr_slide);
